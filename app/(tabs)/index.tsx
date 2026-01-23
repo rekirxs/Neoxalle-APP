@@ -1,8 +1,11 @@
-import useTheme from "@/hooks/useTheme";
+import useTheme, { ColorScheme } from "@/hooks/useTheme";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Index() {
-  const { toggleDarkMode } = useTheme();
+  const { toggleDarkMode, colors } = useTheme();
+
+  const styles = creatStyles(colors);
+
   return (
     <View style={styles.container}>
       <Text style={styles.content}>ello.</Text>
@@ -14,14 +17,18 @@ export default function Index() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 20,
-  },
-  content: {
-    fontSize: 48,
-  },
-});
+const creatStyles = (colors: ColorScheme) => {
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 20,
+      backgroundColor: colors.bg,
+    },
+    content: {
+      fontSize: 48,
+    },
+  });
+  return styles;
+};

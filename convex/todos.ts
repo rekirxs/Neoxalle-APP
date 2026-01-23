@@ -42,7 +42,7 @@ export const editTodo = mutation({
   },
 });
 
-export const clearAlltodos = mutation({
+export const clearAllTodos = mutation({
   handler: async (ctx) => {
     const todos = await ctx.db.query("todos").collect();
     for (const todo of todos) {
