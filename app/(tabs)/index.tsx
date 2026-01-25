@@ -217,7 +217,6 @@ export default function Index() {
           style={homeStyles.todoList}
           contentContainerStyle={homeStyles.todoListContent}
           ListEmptyComponent={<EmptyState />}
-          // showsVerticalScrollIndicator={false}
         />
       </SafeAreaView>
     </LinearGradient>

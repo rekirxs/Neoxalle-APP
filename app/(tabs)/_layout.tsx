@@ -1,7 +1,7 @@
-import useTheme from "../../hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
+import useTheme from "../../hooks/useTheme";
 
 const TabsLayout = () => {
   const { colors } = useTheme();
@@ -28,13 +28,21 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Todos",
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flash-outline" size={size} color={color} />
           ),
         }}
       />
-
+      <Tabs.Screen
+        name="connection"
+        options={{
+          title: "Connect",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bluetooth" size={size} color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="settings"
         options={{

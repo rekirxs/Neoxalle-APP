@@ -17,9 +17,9 @@ const EmptyState = () => {
       >
         <Ionicons name="clipboard-outline" size={60} color={colors.textMuted} />
       </LinearGradient>
-      <Text style={homeStyles.emptyText}>No todos yet!</Text>
+      <Text style={homeStyles.emptyText}>Nothing here, yet...</Text>
       <Text style={homeStyles.emptySubtext}>
-        Add your first todo above to get started
+        Add your first game above to get started
       </Text>
     </View>
   );

@@ -31,27 +31,7 @@ const Header = () => {
         </LinearGradient>
 
         <View style={homeStyles.titleTextContainer}>
-          <Text style={homeStyles.title}>Today&apos;s Tasks </Text>
-          <Text style={homeStyles.subtitle}>
-            {completedCount} of {totalCount} completed
-          </Text>
-        </View>
-      </View>
-
-      <View style={homeStyles.progressContainer}>
-        <View style={homeStyles.progressBarContainer}>
-          <View style={homeStyles.progressBar}>
-            <LinearGradient
-              colors={colors.gradients.success}
-              style={[
-                homeStyles.progressFill,
-                { width: `${progressPercentage}%` },
-              ]}
-            />
-          </View>
-          <Text style={homeStyles.progressText}>
-            {Math.round(progressPercentage)}%
-          </Text>
+          <Text style={homeStyles.title}>Welcome! </Text>
         </View>
       </View>
     </View>

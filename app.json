@@ -9,7 +9,13 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.yourcompany.neoxalleapp",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "App needs Bluetooth to connect to devices.",
+        "NSBluetoothPeripheralUsageDescription": "App needs Bluetooth access to communicate with peripherals.",
+        "NSLocationWhenInUseUsageDescription": "Location required for Bluetooth scanning on some OS versions.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +25,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
+      ]
     },
     "web": {
       "output": "static",
@@ -53,6 +64,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "606a15b7-6be2-4a9b-ae38-8069dc6000ff"
+      }
     }
   }
 }
