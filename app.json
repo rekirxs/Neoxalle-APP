@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "neoxalleapp",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
@@ -26,6 +26,19 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "react-native-ble-manager",
+        {
+          "permissions": [
+            "android.permission.BLUETOOTH",
+            "android.permission.BLUETOOTH_ADMIN",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.BLUETOOTH_SCAN",
+            "android.permission.BLUETOOTH_CONNECT"
+          ],
+          "isBackgroundEnabled": false
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -33,10 +46,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#000000"
         }
       ]
     ],

@@ -100,18 +100,18 @@ export default function Index() {
           >
             <LinearGradient
               colors={
-                item.isCompleted
+                item.IsCompleted
                   ? colors.gradients.success
                   : colors.gradients.muted
               }
               style={[
                 homeStyles.checkboxInner,
                 {
-                  borderColor: item.isCompleted ? "transparent" : colors.border,
+                  borderColor: item.IsCompleted ? "transparent" : colors.border,
                 },
               ]}
             >
-              {item.isCompleted && (
+              {item.IsCompleted && (
                 <Ionicons name="checkmark" size={18} color="#fff" />
               )}
             </LinearGradient>
@@ -158,7 +158,7 @@ export default function Index() {
               <Text
                 style={[
                   homeStyles.todoText,
-                  item.isCompleted && {
+                  item.IsCompleted && {
                     textDecorationLine: "line-through",
                     color: colors.textMuted,
                     opacity: 0.6,

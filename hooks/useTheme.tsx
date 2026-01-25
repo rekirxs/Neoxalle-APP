@@ -1,12 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  createContext,
-  default as React,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, default as React, ReactNode, useContext } from "react";
 
 // AsyncStorage is React Native’s simple, promise-based API for persisting small bits of data on a user’s device. Think of it as the mobile-app equivalent of the browser’s localStorage, but asynchronous and cross-platform.
 
@@ -35,36 +27,8 @@ export interface ColorScheme {
     input: string;
     editInput: string;
   };
-  statusBarStyle: "light-content" | "dark-content";
+  statusBarStyle: "light-content";
 }
-
-const lightColors: ColorScheme = {
-  bg: "#f8fafc",
-  surface: "#ffffff",
-  text: "#1e293b",
-  textMuted: "#64748b",
-  border: "#e2e8f0",
-  primary: "#7c0f6e",
-  success: "#10b981",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  shadow: "#000000",
-  gradients: {
-    background: ["#f8fafc", "#e2e8f0"],
-    surface: ["#c2c2c2", "#f8fafc"],
-    primary: ["#7c0f6e", "#5a0c5a"],
-    success: ["#10b981", "#059669"],
-    warning: ["#f59e0b", "#d97706"],
-    danger: ["#ef4444", "#dc2626"],
-    muted: ["#9ca3af", "#6b7280"],
-    empty: ["#f3f4f6", "#e5e7eb"],
-  },
-  backgrounds: {
-    input: "#ffffff",
-    editInput: "#ffffff",
-  },
-  statusBarStyle: "dark-content" as const,
-};
 
 const darkColors: ColorScheme = {
   bg: "#140b18",
@@ -96,32 +60,17 @@ const darkColors: ColorScheme = {
 
 interface ThemeContextType {
   isDarkMode: boolean;
-  toggleDarkMode: () => void;
   colors: ColorScheme;
 }
 
 const ThemeContext = createContext<undefined | ThemeContextType>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // get the user's choice
-    AsyncStorage.getItem("darkMode").then((value) => {
-      if (value) setIsDarkMode(JSON.parse(value));
-    });
-  }, []);
-
-  const toggleDarkMode = async () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    await AsyncStorage.setItem("darkMode", JSON.stringify(newMode));
-  };
-
-  const colors = isDarkMode ? darkColors : lightColors;
+  const isDarkMode = true;
+  const colors = darkColors;
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode, colors }}>
+    <ThemeContext.Provider value={{ isDarkMode, colors }}>
       {children}
     </ThemeContext.Provider>
   );
