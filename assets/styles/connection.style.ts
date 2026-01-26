@@ -43,7 +43,7 @@ export const createConnectionStyles = (colors: ColorScheme) => {
     section: {
       borderRadius: 20,
       padding: 24,
-      shadowColor: "#000",
+      shadowColor: "#351f2c",
       shadowOffset: {
         width: 0,
         height: 4,
@@ -72,12 +72,12 @@ export const createConnectionStyles = (colors: ColorScheme) => {
     statCard: {
       flexDirection: "row",
       alignItems: "center",
-      padding: 20,
+      padding: 10,
       borderRadius: 16,
       borderLeftWidth: 4,
     },
     statIconContainer: {
-      marginRight: 16,
+      marginRight: 10,
     },
     statIcon: {
       width: 40,
@@ -87,7 +87,7 @@ export const createConnectionStyles = (colors: ColorScheme) => {
       alignItems: "center",
     },
     statNumber: {
-      fontSize: 28,
+      fontSize: 10,
       fontWeight: "800",
       letterSpacing: -1,
       color: colors.text,
@@ -157,22 +157,21 @@ export const createConnectionStyles = (colors: ColorScheme) => {
     },
     scanButtonIconContainer: {
       width: 48,
-      height: 48, // Ahora es cuadrado
-      borderRadius: 8, // Puedes hacerlo cuadrado con esquinas redondeadas
+      height: 48,
+      borderRadius: 8,
       justifyContent: "center",
       alignItems: "center",
-      marginRight: 12, // Espacio entre el icono y el texto
+      marginRight: 12,
     },
 
-    // El botón principal ahora es un contenedor horizontal
     scanButton: {
-      height: 60, // Una altura razonable para un botón horizontal
-      borderRadius: 12, // Bordes redondeados
+      height: 60,
+      borderRadius: 12,
       justifyContent: "center",
       alignItems: "center",
       marginTop: 20,
-      flexDirection: "row", // <--- CRUCIAL: Organiza los hijos en fila
-      paddingHorizontal: 20, // Añade padding horizontal para que no se vea pegado
+      flexDirection: "row",
+      paddingHorizontal: 20,
     },
     scanButtonText: {
       color: "#ffffff",
