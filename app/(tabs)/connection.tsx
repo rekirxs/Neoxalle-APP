@@ -15,7 +15,7 @@ import {
 import { BleManager, Device } from "react-native-ble-plx";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const DEVICE_PREFIX = "NEOXALLE"; // Fixed spelling - single X
+const DEVICE_PREFIX = "NeoXalle_Pod";
 
 const manager = new BleManager();
 
@@ -27,7 +27,7 @@ const ConnectionScreen = () => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [connectedDevices, setConnectedDevices] = useState<Device[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState("Ready");
+  const [connectionStatus, setConnectionStatus] = useState("Ready to scan");
 
   const checkAndroidPermissions = async () => {
     if (Platform.OS !== "android") return true;
@@ -35,7 +35,6 @@ const ConnectionScreen = () => {
     const androidVersion = Platform.Version as number;
 
     try {
-      // Android 12+ (API 31+)
       if (androidVersion >= 31) {
         const granted = await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
@@ -54,13 +53,10 @@ const ConnectionScreen = () => {
           PermissionsAndroid.RESULTS.GRANTED;
 
         return scanGranted && connectGranted && locationGranted;
-      }
-      // Android 6-11
-      else {
+      } else {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
-
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       }
     } catch (error) {
@@ -88,15 +84,14 @@ const ConnectionScreen = () => {
     }
   };
 
-  // Check if device is a NeoXalle device
   const isTargetDevice = (deviceName: string) => {
     if (!deviceName) return false;
-    return deviceName.toUpperCase().includes("NEOXALLE");
+    return deviceName.startsWith(DEVICE_PREFIX);
   };
 
   const startScan = async () => {
     console.log("=== STARTING SCAN ===");
-    console.log("🔍 Scanning for NeoXalle devices only...");
+    console.log("🔍 Scanning for NeoXalle Pods only...");
     setError(null);
     setIsScanning(true);
     setDevices([]);
@@ -133,11 +128,9 @@ const ConnectionScreen = () => {
 
         if (device && device.name) {
           const deviceName = device.name;
-          console.log("📡 Found device:", deviceName, "RSSI:", device.rssi);
 
-          // Check if it's a NeoXalle device
           if (isTargetDevice(deviceName)) {
-            console.log("✅ ACCEPTED - NeoXalle device");
+            console.log("✅ ACCEPTED - NeoXalle Pod:", deviceName);
 
             setDevices((prevDevices) => {
               const exists = prevDevices.find((d) => d.id === device.id);
@@ -147,9 +140,6 @@ const ConnectionScreen = () => {
               }
               return prevDevices;
             });
-          } else {
-            console.log("❌ REJECTED - Not a NeoXalle device");
-            // DO NOT add to devices list - only NeoXalle devices
           }
         }
       });
@@ -166,7 +156,7 @@ const ConnectionScreen = () => {
 
   const stopScan = () => {
     console.log("Stopping scan...");
-    console.log(`Found ${devices.length} NeoXalle devices`);
+    console.log(`Found ${devices.length} NeoXalle Pods`);
     manager.stopDeviceScan();
     setIsScanning(false);
   };
@@ -176,7 +166,6 @@ const ConnectionScreen = () => {
       setConnectionStatus(`Connecting to ${device.name}...`);
 
       const connectedDevice = await device.connect();
-
       await connectedDevice.discoverAllServicesAndCharacteristics();
 
       setConnectedDevices((prev) => {
@@ -187,11 +176,11 @@ const ConnectionScreen = () => {
         return prev;
       });
 
-      setConnectionStatus(`Connected to ${device.name}`);
+      setConnectionStatus(`✅ Connected to ${device.name}`);
       console.log(`✅ Connected to: ${device.name}`);
     } catch (error) {
       console.log(`❌ Failed to connect to ${device.name}:`, error);
-      setConnectionStatus(`Failed to connect to ${device.name}`);
+      setConnectionStatus(`❌ Failed to connect to ${device.name}`);
     }
   };
 
@@ -206,13 +195,32 @@ const ConnectionScreen = () => {
     }
   };
 
+  // SIMPLE COMMAND SENDING - PLAIN TEXT
+  const sendCommand = async (device: Device, command: string) => {
+    try {
+      console.log(`📤 Sending to ${device.name}: "${command}"`);
+
+      // Send plain text command (ASCII)
+      await device.writeCharacteristicWithResponseForService(
+        "4fafc201-1fb5-459e-8fcc-c5c9c331914b",
+        "beb5483e-36e1-4688-b7f5-ea07361b26a8",
+        command,
+      );
+
+      console.log(`✅ Command sent to ${device.name}`);
+      setConnectionStatus(`Sent "${command}" to ${device.name}`);
+    } catch (error) {
+      console.log(`❌ Failed to send command:`, error);
+      setConnectionStatus(`Failed to send command to ${device.name}`);
+    }
+  };
+
   useEffect(() => {
     return () => {
       manager.stopDeviceScan();
     };
   }, []);
 
-  // Render each device item
   const renderDeviceItem = ({ item }: { item: Device }) => {
     const isConnected = connectedDevices.some((d) => d.id === item.id);
 
@@ -223,7 +231,7 @@ const ConnectionScreen = () => {
           {
             borderLeftColor: isConnected ? colors.success : colors.primary,
             backgroundColor: "rgba(255,255,255,0.05)",
-            marginBottom: 8,
+            marginBottom: 12,
           },
         ]}
       >
@@ -244,7 +252,7 @@ const ConnectionScreen = () => {
             {item.name || "Unknown Device"}
           </Text>
           <Text style={connectionStyles.statLabel}>
-            ID: {item.id?.substring(0, 8)}... • Signal: {item.rssi || "N/A"} dBm
+            Signal: {item.rssi || "N/A"} dBm
           </Text>
           <View
             style={{ flexDirection: "row", marginTop: 8, alignItems: "center" }}
@@ -297,11 +305,160 @@ const ConnectionScreen = () => {
             {isConnected ? "Disconnect" : "Connect"}
           </Text>
         </TouchableOpacity>
+
+        {/* Control Buttons - Only show when connected */}
+        {isConnected && (
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 12,
+              gap: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => sendCommand(item, "RANDOM")}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 6,
+                backgroundColor: colors.primary + "20",
+                flex: 1,
+                minWidth: 70,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.primary,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                🎲 Random
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => sendCommand(item, "RED")}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 6,
+                backgroundColor: "#FF000020",
+                flex: 1,
+                minWidth: 70,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FF0000",
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                🔴 Red
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => sendCommand(item, "GREEN")}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 6,
+                backgroundColor: "#00FF0020",
+                flex: 1,
+                minWidth: 70,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#00FF00",
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                🟢 Green
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => sendCommand(item, "BLUE")}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 6,
+                backgroundColor: "#0000FF20",
+                flex: 1,
+                minWidth: 70,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#0000FF",
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                🔵 Blue
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => sendCommand(item, "OFF")}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 6,
+                backgroundColor: colors.danger + "20",
+                flex: 1,
+                minWidth: 70,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.danger,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                ⚫ Off
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => sendCommand(item, "PING")}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 6,
+                backgroundColor: colors.warning + "20",
+                flex: 1,
+                minWidth: 70,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.warning,
+                  fontSize: 12,
+                  fontWeight: "600",
+                }}
+              >
+                🏓 Ping
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     );
   };
 
-  // Empty list component
   const renderEmptyList = () => (
     <View
       style={{
@@ -317,7 +474,7 @@ const ConnectionScreen = () => {
           { marginTop: 16, textAlign: "center" },
         ]}
       >
-        No NeoXalle Devices Found
+        No NeoXalle Pods Found
       </Text>
       <Text
         style={[
@@ -325,7 +482,7 @@ const ConnectionScreen = () => {
           { textAlign: "center", marginTop: 8 },
         ]}
       >
-        Press Scan to search for NeoXalle devices
+        Press Scan to search for NeoXalle Pods
       </Text>
     </View>
   );
@@ -336,7 +493,6 @@ const ConnectionScreen = () => {
       style={connectionStyles.container}
     >
       <SafeAreaView style={connectionStyles.safeArea}>
-        {/* Header - Fixed at top */}
         <View style={connectionStyles.header}>
           <View style={connectionStyles.titleContainer}>
             <LinearGradient
@@ -345,10 +501,9 @@ const ConnectionScreen = () => {
             >
               <Ionicons name="bluetooth" size={28} color="#ffffff" />
             </LinearGradient>
-            <Text style={connectionStyles.title}>Connection</Text>
+            <Text style={connectionStyles.title}>NeoXalle Pods</Text>
           </View>
 
-          {/* Status Section */}
           <View style={[connectionStyles.section, { marginTop: 16 }]}>
             <View
               style={{
@@ -375,18 +530,15 @@ const ConnectionScreen = () => {
                     { color: colors.textMuted },
                   ]}
                 >
-                  {isScanning
-                    ? "Scanning for NeoXalle devices..."
-                    : connectionStatus}
+                  {isScanning ? "Scanning..." : connectionStatus}
                 </Text>
               </View>
               <Text style={[connectionStyles.statLabel, { fontSize: 12 }]}>
-                {devices.length} device{devices.length !== 1 ? "s" : ""}
+                {devices.length} pod{devices.length !== 1 ? "s" : ""}
               </Text>
             </View>
           </View>
 
-          {/* Scan Button */}
           <View style={{ marginTop: 20 }}>
             <TouchableOpacity
               onPress={isScanning ? stopScan : startScan}
@@ -406,18 +558,16 @@ const ConnectionScreen = () => {
                 style={connectionStyles.scanButtonIconContainer}
               >
                 <Ionicons
-                  name={isScanning ? "stop" : "scan"}
+                  name={isScanning ? "stop" : "search"}
                   size={28}
                   color="#ffffff"
                 />
               </LinearGradient>
-
               <Text style={connectionStyles.scanButtonText}>
-                {isScanning ? "Stop Scan" : "Scan for NeoXalle"}
+                {isScanning ? "Stop Scanning" : "Scan for Pods"}
               </Text>
             </TouchableOpacity>
 
-            {/* Error Message */}
             {error && (
               <View
                 style={[
@@ -448,7 +598,6 @@ const ConnectionScreen = () => {
           </View>
         </View>
 
-        {/* Devices List */}
         <View style={{ flex: 1, paddingHorizontal: 20, marginTop: 20 }}>
           <Text
             style={[
@@ -456,7 +605,7 @@ const ConnectionScreen = () => {
               { marginBottom: 12, fontSize: 18 },
             ]}
           >
-            NeoXalle Devices ({devices.length})
+            Found Pods ({devices.length})
           </Text>
 
           {devices.length === 0 && !isScanning ? (
@@ -468,29 +617,16 @@ const ConnectionScreen = () => {
               showsVerticalScrollIndicator={true}
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingBottom: 20 }}
-              keyExtractor={(item, index) => item?.id || `device-${index}`}
-              ListHeaderComponent={() => (
-                <Text
-                  style={{
-                    color: colors.textMuted,
-                    fontSize: 12,
-                    marginBottom: 12,
-                    textAlign: "center",
-                  }}
-                >
-                  Found {devices.length} NeoXalle device(s)
-                </Text>
-              )}
+              keyExtractor={(item, index) => item?.id || `pod-${index}`}
             />
           )}
         </View>
 
-        {/* Debug Info - At bottom */}
         <View
           style={[
             connectionStyles.section,
             {
-              backgroundColor: colors.backgrounds + "40",
+              backgroundColor: colors.backgrounds + "20",
               alignItems: "center",
               marginHorizontal: 20,
               marginBottom: 20,
@@ -504,8 +640,7 @@ const ConnectionScreen = () => {
               { textAlign: "center", fontSize: 12 },
             ]}
           >
-            Platform: {Platform.OS} • Scanning: {isScanning ? "Yes" : "No"} •
-            Devices: {devices.length}
+            Commands: RANDOM • RED • GREEN • BLUE • OFF • PING
           </Text>
         </View>
       </SafeAreaView>
