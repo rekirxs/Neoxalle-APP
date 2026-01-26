@@ -15,7 +15,7 @@ const LoadingSpinner = () => {
     >
       <View style={homeStyles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={homeStyles.loadingText}>Loading your todos...</Text>
+        <Text style={homeStyles.loadingText}>Loading...</Text>
       </View>
     </LinearGradient>
   );

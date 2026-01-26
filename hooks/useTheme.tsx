@@ -14,6 +14,7 @@ export interface ColorScheme {
   danger: string;
   shadow: string;
   gradients: {
+    button: [string, string];
     background: [string, string];
     surface: [string, string];
     primary: [string, string];
@@ -42,6 +43,7 @@ const darkColors: ColorScheme = {
   danger: "#f87171",
   shadow: "#000000",
   gradients: {
+    button: ["#433c46", "#2e2731"],
     background: ["#1a1118", "#3b1b34"],
     surface: ["#1e293b", "#334155"],
     primary: ["#7c0f6e", "#5a0c5a"],

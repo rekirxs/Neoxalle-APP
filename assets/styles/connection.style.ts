@@ -155,6 +155,30 @@ export const createConnectionStyles = (colors: ColorScheme) => {
       fontWeight: "600",
       color: colors.danger,
     },
+    scanButtonIconContainer: {
+      width: 48,
+      height: 48, // Ahora es cuadrado
+      borderRadius: 8, // Puedes hacerlo cuadrado con esquinas redondeadas
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12, // Espacio entre el icono y el texto
+    },
+
+    // El botón principal ahora es un contenedor horizontal
+    scanButton: {
+      height: 60, // Una altura razonable para un botón horizontal
+      borderRadius: 12, // Bordes redondeados
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 20,
+      flexDirection: "row", // <--- CRUCIAL: Organiza los hijos en fila
+      paddingHorizontal: 20, // Añade padding horizontal para que no se vea pegado
+    },
+    scanButtonText: {
+      color: "#ffffff",
+      fontSize: 21,
+      fontWeight: "bold",
+    },
   });
 
   return styles;
