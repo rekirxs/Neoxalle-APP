@@ -31,7 +31,7 @@ const TodoInput = () => {
       <View style={homeStyles.inputWrapper}>
         <TextInput
           style={homeStyles.input}
-          placeholder="Whats needs to be done"
+          placeholder="type name"
           value={newTodo}
           onChangeText={setNewTodo}
           onSubmitEditing={handleAddTodo}

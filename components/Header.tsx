@@ -17,8 +17,6 @@ const Header = () => {
     ? todos.filter((todo) => todo.IsCompleted).length
     : 0;
   const totalCount = todos ? todos.length : 0;
-  const progressPercentage =
-    totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   return (
     <View style={homeStyles.header}>

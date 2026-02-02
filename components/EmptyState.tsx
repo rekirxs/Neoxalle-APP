@@ -1,6 +1,6 @@
 import { createHomeStyles } from "@/assets/styles/home.style";
 import useTheme from "@/hooks/useTheme";
-import { Ionicons } from "@expo/vector-icons";
+import AntDesign from "@expo/vector-icons/AntDesign";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text, View } from "react-native";
 
@@ -15,7 +15,7 @@ const EmptyState = () => {
         colors={colors.gradients.empty}
         style={homeStyles.emptyIconContainer}
       >
-        <Ionicons name="clipboard-outline" size={60} color={colors.textMuted} />
+        <AntDesign name="ellipsis" size={60} color={colors.textMuted} />
       </LinearGradient>
       <Text style={homeStyles.emptyText}>Nothing here, yet...</Text>
       <Text style={homeStyles.emptySubtext}>

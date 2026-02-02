@@ -1,6 +1,5 @@
 import { createHomeStyles } from "@/assets/styles/home.style";
 import EmptyState from "@/components/EmptyState";
-import Header from "@/components/Header";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import TodoInput from "@/components/TodoInput";
 import { api } from "@/convex/_generated/api";
@@ -9,10 +8,13 @@ import useTheme from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
+  Easing,
   FlatList,
+  Image,
   StatusBar,
   Text,
   TextInput,
@@ -22,6 +24,60 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Todo = Doc<"todos">;
+
+function GlowingLogo() {
+  const glowAnim = useRef(new Animated.Value(0.5)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.5,
+          duration: 1500,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [glowAnim]);
+
+  const opacity = glowAnim;
+
+  return (
+    <View style={{ alignItems: "center" }}>
+      <Animated.View
+        style={{
+          opacity,
+          shadowColor: "#A020F0",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
+        <Image
+          source={require("@/assets/images/NeoXalle.png")}
+          style={{
+            width: 180 * 1.5,
+            height: 67.5 * 1.5,
+            resizeMode: "contain",
+          }}
+        />
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function Index() {
   const { colors } = useTheme();
@@ -93,30 +149,6 @@ export default function Index() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <TouchableOpacity
-            style={homeStyles.checkbox}
-            activeOpacity={0.7}
-            onPress={() => handleToggleTodo(item._id)}
-          >
-            <LinearGradient
-              colors={
-                item.IsCompleted
-                  ? colors.gradients.success
-                  : colors.gradients.muted
-              }
-              style={[
-                homeStyles.checkboxInner,
-                {
-                  borderColor: item.IsCompleted ? "transparent" : colors.border,
-                },
-              ]}
-            >
-              {item.IsCompleted && (
-                <Ionicons name="checkmark" size={18} color="#fff" />
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
-
           {isEditing ? (
             <View style={homeStyles.editContainer}>
               <TextInput
@@ -206,7 +238,15 @@ export default function Index() {
     >
       <StatusBar barStyle={colors.statusBarStyle} />
       <SafeAreaView style={homeStyles.safeArea}>
-        <Header />
+        <View
+          style={{
+            alignItems: "center",
+            marginTop: 40,
+            marginBottom: 30,
+          }}
+        >
+          <GlowingLogo />
+        </View>
 
         <TodoInput />
 

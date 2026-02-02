@@ -59,8 +59,8 @@ const ConnectionScreen = () => {
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       }
-    } catch (error) {
-      console.log("Permission error:", error);
+    } catch (err) {
+      console.log("Permission error:", err);
       return false;
     }
   };
@@ -78,8 +78,8 @@ const ConnectionScreen = () => {
         return false;
       }
       return true;
-    } catch (error) {
-      console.log("Bluetooth check error:", error);
+    } catch (err) {
+      console.log("Bluetooth check error:", err);
       return false;
     }
   };
@@ -147,9 +147,9 @@ const ConnectionScreen = () => {
       setTimeout(() => {
         stopScan();
       }, 10000);
-    } catch (error) {
-      console.log("Start scan error:", error);
-      setError(error.message || "Unknown error");
+    } catch (err) {
+      console.log("Start scan error:", err);
+      setError((err as Error).message || "Unknown error");
       setIsScanning(false);
     }
   };
@@ -178,8 +178,8 @@ const ConnectionScreen = () => {
 
       setConnectionStatus(`✅ Connected to ${device.name}`);
       console.log(`✅ Connected to: ${device.name}`);
-    } catch (error) {
-      console.log(`❌ Failed to connect to ${device.name}:`, error);
+    } catch (err) {
+      console.log(`❌ Failed to connect to ${device.name}:`, err);
       setConnectionStatus(`❌ Failed to connect to ${device.name}`);
     }
   };
@@ -190,17 +190,15 @@ const ConnectionScreen = () => {
       setConnectedDevices((prev) => prev.filter((d) => d.id !== device.id));
       setConnectionStatus(`Disconnected from ${device.name}`);
       console.log(`🔌 Disconnected from ${device.name}`);
-    } catch (error) {
-      console.log("Disconnect error:", error);
+    } catch (err) {
+      console.log("Disconnect error:", err);
     }
   };
 
-  // SIMPLE COMMAND SENDING - PLAIN TEXT
   const sendCommand = async (device: Device, command: string) => {
     try {
       console.log(`📤 Sending to ${device.name}: "${command}"`);
 
-      // Send plain text command (ASCII)
       await device.writeCharacteristicWithResponseForService(
         "4fafc201-1fb5-459e-8fcc-c5c9c331914b",
         "beb5483e-36e1-4688-b7f5-ea07361b26a8",
@@ -209,8 +207,8 @@ const ConnectionScreen = () => {
 
       console.log(`✅ Command sent to ${device.name}`);
       setConnectionStatus(`Sent "${command}" to ${device.name}`);
-    } catch (error) {
-      console.log(`❌ Failed to send command:`, error);
+    } catch (err) {
+      console.log(`❌ Failed to send command:`, err);
       setConnectionStatus(`Failed to send command to ${device.name}`);
     }
   };
@@ -227,232 +225,190 @@ const ConnectionScreen = () => {
     return (
       <View
         style={[
-          connectionStyles.statCard,
-          {
-            borderLeftColor: isConnected ? colors.success : colors.primary,
-            backgroundColor: "rgba(255,255,255,0.05)",
-            marginBottom: 12,
-          },
+          connectionStyles.deviceCard,
+          isConnected
+            ? connectionStyles.deviceCardConnected
+            : connectionStyles.deviceCardDisconnected,
         ]}
       >
-        <View style={connectionStyles.statIconContainer}>
-          <LinearGradient
-            colors={
-              isConnected
-                ? [colors.success, colors.success + "CC"]
-                : colors.gradients.primary
-            }
-            style={connectionStyles.statIcon}
-          >
-            <Ionicons name="bluetooth-outline" size={20} color="#ffffff" />
-          </LinearGradient>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[connectionStyles.statNumber, { fontSize: 16 }]}>
-            {item.name || "Unknown Device"}
-          </Text>
-          <Text style={connectionStyles.statLabel}>
-            Signal: {item.rssi || "N/A"} dBm
-          </Text>
-          <View
-            style={{ flexDirection: "row", marginTop: 8, alignItems: "center" }}
-          >
-            <View
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: isConnected ? colors.success : colors.warning,
-                marginRight: 6,
-              }}
-            />
-            <Text
-              style={{
-                color: isConnected ? colors.success : colors.warning,
-                fontSize: 12,
-              }}
+        {/* Encabezado del dispositivo */}
+        <View style={connectionStyles.deviceHeader}>
+          <View style={connectionStyles.deviceIconContainer}>
+            <LinearGradient
+              colors={
+                isConnected
+                  ? [colors.success, colors.success + "CC"]
+                  : colors.gradients.primary
+              }
+              style={connectionStyles.deviceIcon}
             >
-              {isConnected ? "Connected" : "Disconnected"}
+              <Ionicons name="bluetooth-outline" size={28} color="#ffffff" />
+            </LinearGradient>
+          </View>
+
+          <View style={connectionStyles.deviceInfo}>
+            <Text style={connectionStyles.deviceName}>
+              {item.name || "Unknown Device"}
             </Text>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: isConnected
+                    ? colors.success
+                    : colors.warning,
+                  marginRight: 8,
+                }}
+              />
+              <Text
+                style={[
+                  connectionStyles.deviceStatus,
+                  isConnected &&
+                    (connectionStyles.deviceStatusConnected as any),
+                ]}
+              >
+                {isConnected ? "Connected" : "Disconnected"}
+                {item.rssi ? ` • ${item.rssi} dBm` : ""}
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Connect/Disconnect Button */}
+        {/* Botón principal Connect/Disconnect */}
         <TouchableOpacity
           onPress={() =>
             isConnected ? disconnectDevice(item) : connectToDevice(item)
           }
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 6,
-            backgroundColor: isConnected
-              ? colors.danger + "20"
-              : colors.primary + "20",
-            borderWidth: 1,
-            borderColor: isConnected
-              ? colors.danger + "40"
-              : colors.primary + "40",
-          }}
+          style={[
+            connectionStyles.mainButton,
+            isConnected
+              ? connectionStyles.mainButtonConnected
+              : connectionStyles.mainButtonDisconnected,
+          ]}
         >
           <Text
-            style={{
-              color: isConnected ? colors.danger : colors.primary,
-              fontSize: 12,
-              fontWeight: "600",
-            }}
+            style={[
+              connectionStyles.mainButtonText,
+              { color: isConnected ? colors.danger : colors.primary },
+            ]}
           >
-            {isConnected ? "Disconnect" : "Connect"}
+            {isConnected ? "DISCONNECT" : "CONNECT"}
           </Text>
         </TouchableOpacity>
 
-        {/* Control Buttons - Only show when connected */}
+        {/* Controles solo si está conectado */}
         {isConnected && (
-          <View
-            style={{
-              flexDirection: "row",
-              marginTop: 12,
-              gap: 6,
-              flexWrap: "wrap",
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => sendCommand(item, "RANDOM")}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 6,
-                backgroundColor: colors.primary + "20",
-                flex: 1,
-                minWidth: 70,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
+          <View style={connectionStyles.controlsContainer}>
+            <Text style={connectionStyles.controlsTitle}>LED Controls</Text>
+            aa
+            <View style={connectionStyles.controlsGrid}>
+              {/* Fila 1 */}
+              <TouchableOpacity
+                onPress={() => sendCommand(item, "RANDOM")}
+                style={[
+                  connectionStyles.controlButton,
+                  { backgroundColor: colors.primary + "20" },
+                ]}
               >
-                🎲 Random
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    connectionStyles.controlButtonText,
+                    { color: colors.primary },
+                  ]}
+                >
+                  🎲 Random
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => sendCommand(item, "RED")}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 6,
-                backgroundColor: "#FF000020",
-                flex: 1,
-                minWidth: 70,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FF0000",
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
+              <TouchableOpacity
+                onPress={() => sendCommand(item, "RED")}
+                style={[
+                  connectionStyles.controlButton,
+                  { backgroundColor: "#FF000020" },
+                ]}
               >
-                🔴 Red
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    connectionStyles.controlButtonText,
+                    { color: "#FF0000" },
+                  ]}
+                >
+                  🔴 Red
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => sendCommand(item, "GREEN")}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 6,
-                backgroundColor: "#00FF0020",
-                flex: 1,
-                minWidth: 70,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: "#00FF00",
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
+              <TouchableOpacity
+                onPress={() => sendCommand(item, "GREEN")}
+                style={[
+                  connectionStyles.controlButton,
+                  { backgroundColor: "#00FF0020" },
+                ]}
               >
-                🟢 Green
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    connectionStyles.controlButtonText,
+                    { color: "#00FF00" },
+                  ]}
+                >
+                  🟢 Green
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => sendCommand(item, "BLUE")}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 6,
-                backgroundColor: "#0000FF20",
-                flex: 1,
-                minWidth: 70,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: "#0000FF",
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
+              {/* Fila 2 */}
+              <TouchableOpacity
+                onPress={() => sendCommand(item, "BLUE")}
+                style={[
+                  connectionStyles.controlButton,
+                  { backgroundColor: "#0000FF20" },
+                ]}
               >
-                🔵 Blue
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    connectionStyles.controlButtonText,
+                    { color: "#0000FF" },
+                  ]}
+                >
+                  🔵 Blue
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => sendCommand(item, "OFF")}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 6,
-                backgroundColor: colors.danger + "20",
-                flex: 1,
-                minWidth: 70,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.danger,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
+              <TouchableOpacity
+                onPress={() => sendCommand(item, "OFF")}
+                style={[
+                  connectionStyles.controlButton,
+                  { backgroundColor: colors.danger + "20" },
+                ]}
               >
-                ⚫ Off
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    connectionStyles.controlButtonText,
+                    { color: colors.danger },
+                  ]}
+                >
+                  ⚫ Off
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => sendCommand(item, "PING")}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 6,
-                backgroundColor: colors.warning + "20",
-                flex: 1,
-                minWidth: 70,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.warning,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
+              <TouchableOpacity
+                onPress={() => sendCommand(item, "PING")}
+                style={[
+                  connectionStyles.controlButton,
+                  { backgroundColor: colors.warning + "20" },
+                ]}
               >
-                🏓 Ping
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    connectionStyles.controlButtonText,
+                    { color: colors.warning },
+                  ]}
+                >
+                  🏓 Ping
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
@@ -460,20 +416,11 @@ const ConnectionScreen = () => {
   };
 
   const renderEmptyList = () => (
-    <View
-      style={{
-        alignItems: "center",
-        padding: 40,
-        justifyContent: "center",
-      }}
-    >
-      <Ionicons name="bluetooth-outline" size={48} color={colors.textMuted} />
-      <Text
-        style={[
-          connectionStyles.sectionTitle,
-          { marginTop: 16, textAlign: "center" },
-        ]}
-      >
+    <View style={connectionStyles.emptyState}>
+      <View style={connectionStyles.emptyStateIcon}>
+        <Ionicons name="bluetooth-outline" size={64} color={colors.textMuted} />
+      </View>
+      <Text style={[connectionStyles.sectionTitle, { textAlign: "center" }]}>
         No NeoXalle Pods Found
       </Text>
       <Text
@@ -482,7 +429,7 @@ const ConnectionScreen = () => {
           { textAlign: "center", marginTop: 8 },
         ]}
       >
-        Press Scan to search for NeoXalle Pods
+        Press Scan for Pods to search for available devices
       </Text>
     </View>
   );
@@ -493,6 +440,7 @@ const ConnectionScreen = () => {
       style={connectionStyles.container}
     >
       <SafeAreaView style={connectionStyles.safeArea}>
+        {/* Header */}
         <View style={connectionStyles.header}>
           <View style={connectionStyles.titleContainer}>
             <LinearGradient
@@ -501,111 +449,88 @@ const ConnectionScreen = () => {
             >
               <Ionicons name="bluetooth" size={28} color="#ffffff" />
             </LinearGradient>
-            <Text style={connectionStyles.title}>NeoXalle Pods</Text>
-          </View>
-
-          <View style={[connectionStyles.section, { marginTop: 16 }]}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 5,
-                    backgroundColor: isScanning
-                      ? colors.warning
-                      : colors.success,
-                    marginRight: 8,
-                  }}
-                />
-                <Text
-                  style={[
-                    connectionStyles.settingText,
-                    { color: colors.textMuted },
-                  ]}
-                >
-                  {isScanning ? "Scanning..." : connectionStatus}
-                </Text>
-              </View>
-              <Text style={[connectionStyles.statLabel, { fontSize: 12 }]}>
-                {devices.length} pod{devices.length !== 1 ? "s" : ""}
+            <View>
+              <Text style={connectionStyles.title}>NeoXalle Pods</Text>
+              <Text style={[connectionStyles.statLabel, { marginTop: 4 }]}>
+                Wireless LED Controller System
               </Text>
             </View>
           </View>
 
-          <View style={{ marginTop: 20 }}>
-            <TouchableOpacity
-              onPress={isScanning ? stopScan : startScan}
-              style={[
-                connectionStyles.scanButton,
-                {
-                  backgroundColor: isScanning ? colors.danger : colors.primary,
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={
-                  isScanning
-                    ? [colors.danger, colors.danger + "CC"]
-                    : colors.gradients.button
-                }
-                style={connectionStyles.scanButtonIconContainer}
-              >
-                <Ionicons
-                  name={isScanning ? "stop" : "search"}
-                  size={28}
-                  color="#ffffff"
-                />
-              </LinearGradient>
-              <Text style={connectionStyles.scanButtonText}>
-                {isScanning ? "Stop Scanning" : "Scan for Pods"}
-              </Text>
-            </TouchableOpacity>
-
-            {error && (
+          {/* Status Bar */}
+          <View style={connectionStyles.statusContainer}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
-                style={[
-                  connectionStyles.section,
-                  {
-                    backgroundColor: colors.danger + "20",
-                    borderLeftColor: colors.danger,
-                    marginTop: 16,
-                    padding: 16,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    connectionStyles.sectionTitleDanger,
-                    { marginBottom: 8 },
-                  ]}
-                >
-                  Error
-                </Text>
-                <Text
-                  style={[connectionStyles.statLabel, { color: colors.danger }]}
-                >
-                  {error}
-                </Text>
-              </View>
-            )}
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: isScanning ? colors.warning : colors.success,
+                  marginRight: 10,
+                }}
+              />
+              <Text style={connectionStyles.statusText}>
+                {isScanning ? "Scanning..." : connectionStatus}
+              </Text>
+            </View>
+            <Text style={[connectionStyles.statLabel, { fontSize: 14 }]}>
+              {devices.length} pod{devices.length !== 1 ? "s" : ""} found
+            </Text>
           </View>
-        </View>
 
-        <View style={{ flex: 1, paddingHorizontal: 20, marginTop: 20 }}>
-          <Text
+          {/* Scan Button */}
+          <TouchableOpacity
+            onPress={isScanning ? stopScan : startScan}
             style={[
-              connectionStyles.sectionTitle,
-              { marginBottom: 12, fontSize: 18 },
+              connectionStyles.scanButton,
+              {
+                backgroundColor: isScanning ? colors.danger : colors.primary,
+              },
             ]}
           >
-            Found Pods ({devices.length})
+            <LinearGradient
+              colors={
+                isScanning
+                  ? [colors.danger, colors.danger + "CC"]
+                  : colors.gradients.button
+              }
+              style={connectionStyles.scanButtonIconContainer}
+            >
+              <Ionicons
+                name={isScanning ? "stop" : "search"}
+                size={28}
+                color="#ffffff"
+              />
+            </LinearGradient>
+            <Text style={connectionStyles.scanButtonText}>
+              {isScanning ? "Stop Scanning" : "Scan for Pods"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Error Display */}
+          {error && (
+            <View style={connectionStyles.errorContainer}>
+              <Text
+                style={[
+                  connectionStyles.sectionTitleDanger,
+                  { marginBottom: 8, fontSize: 16 },
+                ]}
+              >
+                Error
+              </Text>
+              <Text
+                style={[connectionStyles.statLabel, { color: colors.danger }]}
+              >
+                {error}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Lista de Dispositivos */}
+        <View style={{ flex: 1, paddingHorizontal: 20 }}>
+          <Text style={[connectionStyles.sectionTitle, { marginBottom: 16 }]}>
+            {devices.length > 0 ? `Found Pods (${devices.length})` : ""}
           </Text>
 
           {devices.length === 0 && !isScanning ? (
@@ -614,33 +539,26 @@ const ConnectionScreen = () => {
             <FlatList
               data={devices}
               renderItem={renderDeviceItem}
-              showsVerticalScrollIndicator={true}
+              showsVerticalScrollIndicator={false}
               style={{ flex: 1 }}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{
+                paddingTop: 8,
+                paddingBottom: 30,
+              }}
               keyExtractor={(item, index) => item?.id || `pod-${index}`}
             />
           )}
         </View>
 
-        <View
-          style={[
-            connectionStyles.section,
-            {
-              backgroundColor: colors.backgrounds + "20",
-              alignItems: "center",
-              marginHorizontal: 20,
-              marginBottom: 20,
-              padding: 12,
-            },
-          ]}
-        >
+        {/* Footer */}
+        <View style={connectionStyles.commandsFooter}>
           <Text
             style={[
               connectionStyles.statLabel,
               { textAlign: "center", fontSize: 12 },
             ]}
           >
-            Commands: RANDOM • RED • GREEN • BLUE • OFF • PING
+            Available Commands: RANDOM • RED • GREEN • BLUE • OFF • PING
           </Text>
         </View>
       </SafeAreaView>
