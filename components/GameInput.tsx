@@ -7,21 +7,21 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { Alert, TextInput, TouchableOpacity, View } from "react-native";
 
-const TodoInput = () => {
+const GameInput = () => {
   const { colors } = useTheme();
   const homeStyles = createHomeStyles(colors);
 
-  const [newTodo, setNewTodo] = useState("");
-  const addTodo = useMutation(api.todos.addTodo);
+  const [newGame, setNewGame] = useState("");
+  const addGame = useMutation(api.games.addGame);
 
-  const handleAddTodo = async () => {
-    if (newTodo.trim()) {
+  const handleAddGame = async () => {
+    if (newGame.trim()) {
       try {
-        await addTodo({ text: newTodo.trim() });
-        setNewTodo("");
+        await addGame({ text: newGame.trim() });
+        setNewGame("");
       } catch (error) {
-        console.log("Error adding a todo", error);
-        Alert.alert("Error", "Failed to add todo.");
+        console.log("Error adding a Game", error);
+        Alert.alert("Error", "Failed to add Game.");
       }
     }
   };
@@ -31,24 +31,24 @@ const TodoInput = () => {
       <View style={homeStyles.inputWrapper}>
         <TextInput
           style={homeStyles.input}
-          placeholder="type name"
-          value={newTodo}
-          onChangeText={setNewTodo}
-          onSubmitEditing={handleAddTodo}
+          placeholder="Whats needs to be done"
+          value={newGame}
+          onChangeText={setNewGame}
+          onSubmitEditing={handleAddGame}
           placeholderTextColor={colors.textMuted}
         />
         <TouchableOpacity
-          onPress={handleAddTodo}
+          onPress={handleAddGame}
           activeOpacity={0.8}
-          disabled={!newTodo.trim()}
+          disabled={!newGame.trim()}
         >
           <LinearGradient
             colors={
-              newTodo.trim() ? colors.gradients.primary : colors.gradients.muted
+              newGame.trim() ? colors.gradients.primary : colors.gradients.muted
             }
             style={[
               homeStyles.addButton,
-              !newTodo.trim() && homeStyles.addButtonDisabled,
+              !newGame.trim() && homeStyles.addButtonDisabled,
             ]}
           >
             <Ionicons name="add" size={24} color="#fff" />
@@ -59,4 +59,4 @@ const TodoInput = () => {
   );
 };
 
-export default TodoInput;
+export default GameInput;

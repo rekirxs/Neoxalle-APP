@@ -1,13 +1,14 @@
 import { createHomeStyles } from "@/assets/styles/home.style";
 import EmptyState from "@/components/EmptyState";
+import GameInput from "@/components/GameInput";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import TodoInput from "@/components/TodoInput";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import useTheme from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -23,7 +24,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Todo = Doc<"todos">;
+type Game = Doc<"games">;
 
 function GlowingLogo() {
   const glowAnim = useRef(new Animated.Value(0.5)).current;
@@ -81,55 +82,56 @@ function GlowingLogo() {
 
 export default function Index() {
   const { colors } = useTheme();
+  const router = useRouter();
 
-  const [editingId, setEditingId] = useState<Id<"todos"> | null>(null);
+  const [editingId, setEditingId] = useState<Id<"games"> | null>(null);
   const [editText, setEditText] = useState("");
 
   const homeStyles = createHomeStyles(colors);
 
-  const todos = useQuery(api.todos.getTodos);
-  const toggleTodo = useMutation(api.todos.toggleTodo);
-  const deleteTodo = useMutation(api.todos.deleteTodo);
-  const updateTodo = useMutation(api.todos.updateTodo);
+  const games = useQuery(api.games.getGames);
+  const toggleGame = useMutation(api.games.toggleGame);
+  const deleteGame = useMutation(api.games.deleteGames);
+  const updateGame = useMutation(api.games.updateGame);
 
-  const isLoading = todos === undefined;
+  const isLoading = games === undefined;
 
   if (isLoading) return <LoadingSpinner />;
 
-  const handleToggleTodo = async (id: Id<"todos">) => {
+  const handleToggleGame = async (id: Id<"games">) => {
     try {
-      await toggleTodo({ id });
+      await toggleGame({ id });
     } catch (error) {
-      console.log("Error toggling todo", error);
-      Alert.alert("Error", "Failed to toggle todo");
+      console.log("Error toggling game", error);
+      Alert.alert("Error", "Failed to toggle game");
     }
   };
 
-  const handleDeleteTodo = async (id: Id<"todos">) => {
-    Alert.alert("Delete Todo", "Are you sure you want to delete this todo?", [
+  const handleDeleteGame = async (id: Id<"games">) => {
+    Alert.alert("Delete Game", "Are you sure you want to delete this game?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => deleteTodo({ id }),
+        onPress: () => deleteGame({ id }),
       },
     ]);
   };
 
-  const handleEditTodo = (todo: Todo) => {
-    setEditText(todo.text);
-    setEditingId(todo._id);
+  const handleEditGame = (game: Game) => {
+    setEditText(game.text);
+    setEditingId(game._id);
   };
 
   const handleSaveEdit = async () => {
     if (editingId) {
       try {
-        await updateTodo({ id: editingId, text: editText.trim() });
+        await updateGame({ id: editingId, text: editText.trim() });
         setEditingId(null);
         setEditText("");
       } catch (error) {
-        console.log("Error updating todo", error);
-        Alert.alert("Error", "Failed to update todo");
+        console.log("Error updating game", error);
+        Alert.alert("Error", "Failed to update game");
       }
     }
   };
@@ -139,13 +141,17 @@ export default function Index() {
     setEditText("");
   };
 
-  const renderTodoItem = ({ item }: { item: Todo }) => {
+  const connectButton = () => {
+    router.push("/connect");
+  };
+
+  const renderGameItem = ({ item }: { item: Game }) => {
     const isEditing = editingId === item._id;
     return (
-      <View style={homeStyles.todoItemWrapper}>
+      <View style={homeStyles.gameItemWrapper}>
         <LinearGradient
           colors={colors.gradients.surface}
-          style={homeStyles.todoItem}
+          style={homeStyles.gameItem}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -157,7 +163,7 @@ export default function Index() {
                 onChangeText={setEditText}
                 autoFocus
                 multiline
-                placeholder="Edit your todo..."
+                placeholder="Edit your game..."
                 placeholderTextColor={colors.textMuted}
               />
               <View style={homeStyles.editButtons}>
@@ -186,11 +192,11 @@ export default function Index() {
               </View>
             </View>
           ) : (
-            <View style={homeStyles.todoTextContainer}>
+            <View style={homeStyles.gameTextContainer}>
               <Text
                 style={[
-                  homeStyles.todoText,
-                  item.IsCompleted && {
+                  homeStyles.gameText,
+                  item.SinglePlayer && {
                     textDecorationLine: "line-through",
                     color: colors.textMuted,
                     opacity: 0.6,
@@ -200,9 +206,9 @@ export default function Index() {
                 {item.text}
               </Text>
 
-              <View style={homeStyles.todoActions}>
+              <View style={homeStyles.gameActions}>
                 <TouchableOpacity
-                  onPress={() => handleEditTodo(item)}
+                  onPress={() => handleEditGame(item)}
                   activeOpacity={0.8}
                 >
                   <LinearGradient
@@ -213,7 +219,7 @@ export default function Index() {
                   </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => handleDeleteTodo(item._id)}
+                  onPress={() => handleDeleteGame(item._id)}
                   activeOpacity={0.8}
                 >
                   <LinearGradient
@@ -238,6 +244,27 @@ export default function Index() {
     >
       <StatusBar barStyle={colors.statusBarStyle} />
       <SafeAreaView style={homeStyles.safeArea}>
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 40,
+            right: 20,
+            backgroundColor: colors.primary,
+            padding: 12,
+            marginTop: 20,
+            borderRadius: 30,
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+          }}
+          onPress={() => connectButton()}
+        >
+          <Ionicons name="bluetooth" size={24} color="#fff" />
+        </TouchableOpacity>
+
         <View
           style={{
             alignItems: "center",
@@ -248,14 +275,14 @@ export default function Index() {
           <GlowingLogo />
         </View>
 
-        <TodoInput />
+        <GameInput />
 
         <FlatList
-          data={todos}
-          renderItem={renderTodoItem}
+          data={games}
+          renderItem={renderGameItem}
           keyExtractor={(item) => item._id}
-          style={homeStyles.todoList}
-          contentContainerStyle={homeStyles.todoListContent}
+          style={homeStyles.gameList}
+          contentContainerStyle={homeStyles.gameListContent}
           ListEmptyComponent={<EmptyState />}
         />
       </SafeAreaView>

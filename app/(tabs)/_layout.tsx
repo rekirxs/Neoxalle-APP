@@ -52,6 +52,20 @@ const TabsLayout = () => {
           ),
         }}
       />
+      <Tabs.Screen
+        name="connect"
+        options={{
+          title: "connect",
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="template"
+        options={{
+          title: "s",
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };

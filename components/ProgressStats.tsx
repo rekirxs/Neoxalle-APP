@@ -10,12 +10,9 @@ import { Text, View } from "react-native";
 const ProgressStats = () => {
   const { colors } = useTheme();
   const settingsStyles = createSettingsStyles(colors);
-  const todos = useQuery(api.todos.getTodos);
-  const totalTodos = todos ? todos.length : 0;
-  const completedTodos = todos
-    ? todos.filter((todo) => todo.IsCompleted).length
-    : 0;
-  const activeTodos = totalTodos - completedTodos;
+  const games = useQuery(api.games.getGames);
+  const totalGames = games ? games.length : 0;
+
   return (
     <View>
       <LinearGradient
@@ -37,7 +34,7 @@ const ProgressStats = () => {
           </View>
           <View>
             <Text style={settingsStyles.statLabel}>Total</Text>
-            <Text style={settingsStyles.statNumber}>{totalTodos}</Text>
+            <Text style={settingsStyles.statNumber}>{totalGames}</Text>
           </View>
         </LinearGradient>
       </LinearGradient>

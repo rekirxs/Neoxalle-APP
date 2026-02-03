@@ -1,5 +1,5 @@
-import { ColorScheme } from "../../hooks/useTheme";
 import { StyleSheet } from "react-native";
+import { ColorScheme } from "../../hooks/useTheme";
 
 export const createHomeStyles = (colors: ColorScheme) => {
   const styles = StyleSheet.create({
@@ -114,10 +114,26 @@ export const createHomeStyles = (colors: ColorScheme) => {
     addButtonDisabled: {
       opacity: 0.5,
     },
-    todoList: {
+    bluetoothButton: {
+      position: "absolute",
+      top: 20,
+      right: 20,
+      zIndex: 10,
+      backgroundColor: colors.primary,
+      padding: 12,
+      borderRadius: 30,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    gameList: {
       flex: 1,
     },
-    todoListContent: {
+    gameListContent: {
       paddingHorizontal: 24,
       paddingBottom: 100,
     },
@@ -125,10 +141,10 @@ export const createHomeStyles = (colors: ColorScheme) => {
       flexGrow: 1,
       justifyContent: "center",
     },
-    todoItemWrapper: {
+    gameItemWrapper: {
       marginVertical: 12,
     },
-    todoItem: {
+    gameItem: {
       flexDirection: "row",
       alignItems: "flex-start",
       padding: 20,
@@ -154,17 +170,17 @@ export const createHomeStyles = (colors: ColorScheme) => {
       justifyContent: "center",
       alignItems: "center",
     },
-    todoTextContainer: {
+    gameTextContainer: {
       flex: 1,
     },
-    todoText: {
+    gameText: {
       fontSize: 17,
       lineHeight: 24,
       fontWeight: "500",
       marginBottom: 16,
       color: colors.text,
     },
-    todoActions: {
+    gameActions: {
       flexDirection: "row",
       gap: 12,
     },

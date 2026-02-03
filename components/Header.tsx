@@ -11,12 +11,7 @@ const Header = () => {
 
   const homeStyles = createHomeStyles(colors);
 
-  const todos = useQuery(api.todos.getTodos);
-
-  const completedCount = todos
-    ? todos.filter((todo) => todo.IsCompleted).length
-    : 0;
-  const totalCount = todos ? todos.length : 0;
+  const game = useQuery(api.games.getGames);
 
   return (
     <View style={homeStyles.header}>
