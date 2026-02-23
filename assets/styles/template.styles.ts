@@ -27,7 +27,7 @@ export const createTemplateStyles = (colors: ColorScheme) => {
       marginRight: 16,
     },
     title: {
-      fontSize: 32,
+      fontSize: 26,
       fontWeight: "700",
       letterSpacing: -1,
       color: colors.text,
@@ -122,7 +122,8 @@ export const createTemplateStyles = (colors: ColorScheme) => {
     settingText: {
       fontSize: 17,
       fontWeight: "600",
-      color: colors.text,
+      color: "#66c04b",
+      right: -100,
     },
     actionButton: {
       flexDirection: "row",

@@ -64,15 +64,16 @@ function GlowingLogo() {
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.8,
           shadowRadius: 20,
-          elevation: 10,
+          elevation: 50,
         }}
       >
         <Image
           source={require("@/assets/images/NeoXalle.png")}
           style={{
-            width: 180 * 1.5,
-            height: 67.5 * 1.5,
+            width: 180 * 1.3,
+            height: 67.5 * 1.3,
             resizeMode: "contain",
+            top: -30,
           }}
         />
       </Animated.View>
@@ -244,13 +245,13 @@ export default function Index() {
     >
       <StatusBar barStyle={colors.statusBarStyle} />
       <SafeAreaView style={homeStyles.safeArea}>
-        <TouchableOpacity
+        {/*<TouchableOpacity
           style={{
             position: "absolute",
             top: 40,
             right: 20,
             backgroundColor: colors.primary,
-            padding: 12,
+            padding: 8,
             marginTop: 20,
             borderRadius: 30,
             alignItems: "center",
@@ -262,9 +263,9 @@ export default function Index() {
           }}
           onPress={() => connectButton()}
         >
-          <Ionicons name="bluetooth" size={24} color="#fff" />
+          <Ionicons name="bluetooth" size={20} color="#fff" />
         </TouchableOpacity>
-
+*/}
         <View
           style={{
             alignItems: "center",
