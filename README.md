@@ -3,6 +3,7 @@
 NeoXalle is a Bluetooth Low Energy (BLE) mobile application designed to connect, monitor, and control a custom hardware device in real time.  
 The project focuses on clean UI, reliable BLE communication, and a modular architecture built for future expansion.
 
+Download here: https://expo.dev/accounts/villasfits/projects/NeoXalle_APP/builds/261fae33-536f-4719-9e70-8497c972798a
 ---
 
 ## Features
