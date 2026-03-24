@@ -35,7 +35,7 @@ const TabsLayout = () => {
         }}
       />
       <Tabs.Screen
-        name="connection"
+        name="connect"
         options={{
           title: "Connect",
           tabBarIcon: ({ color, size }) => (
@@ -52,13 +52,7 @@ const TabsLayout = () => {
           ),
         }}
       />
-      <Tabs.Screen
-        name="connect"
-        options={{
-          title: "connect",
-          href: null,
-        }}
-      />
+
       <Tabs.Screen
         name="template"
         options={{

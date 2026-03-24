@@ -1,23 +1,23 @@
 import { createHomeStyles } from "@/assets/styles/home.style";
-import { api } from "@/convex/_generated/api";
 import useTheme from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { Alert, TextInput, TouchableOpacity, View } from "react-native";
 
-const GameInput = () => {
+type Props = {
+  onAdd?: (text: string) => void;
+};
+
+const GameInput = ({ onAdd }: Props) => {
   const { colors } = useTheme();
   const homeStyles = createHomeStyles(colors);
 
   const [newGame, setNewGame] = useState("");
-  const addGame = useMutation(api.games.addGame);
-
   const handleAddGame = async () => {
     if (newGame.trim()) {
       try {
-        await addGame({ text: newGame.trim() });
+        if (onAdd) onAdd(newGame.trim());
         setNewGame("");
       } catch (error) {
         console.log("Error adding a Game", error);

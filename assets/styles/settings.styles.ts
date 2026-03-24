@@ -1,5 +1,5 @@
-import { ColorScheme } from "../../hooks/useTheme";
 import { StyleSheet } from "react-native";
+import { ColorScheme } from "../../hooks/useTheme";
 
 export const createSettingsStyles = (colors: ColorScheme) => {
   const styles = StyleSheet.create({
@@ -17,6 +17,7 @@ export const createSettingsStyles = (colors: ColorScheme) => {
     titleContainer: {
       flexDirection: "row",
       alignItems: "center",
+      flexShrink: 1,
     },
     iconContainer: {
       width: 56,

@@ -1,8 +1,6 @@
 import { createSettingsStyles } from "@/assets/styles/settings.styles";
-import { api } from "@/convex/_generated/api";
 import useTheme from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Text, View } from "react-native";
@@ -10,8 +8,7 @@ import { Text, View } from "react-native";
 const ProgressStats = () => {
   const { colors } = useTheme();
   const settingsStyles = createSettingsStyles(colors);
-  const games = useQuery(api.games.getGames);
-  const totalGames = games ? games.length : 0;
+  const totalGames = 0;
 
   return (
     <View>

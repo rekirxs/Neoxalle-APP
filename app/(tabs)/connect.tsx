@@ -3,21 +3,17 @@ import useTheme from "@/hooks/useTheme";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
+
 import {
   Animated,
   Easing,
-  FlatList,
   Image,
-  PermissionsAndroid,
-  Platform,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { BleManager, Device } from "react-native-ble-plx";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const manager = new BleManager();
 
 function GlowingLogo() {
   const glowAnim = useRef(new Animated.Value(0.5)).current;
@@ -40,12 +36,26 @@ function GlowingLogo() {
       ]),
     );
     animation.start();
-    return () => animation.stop();
+
+    return () => {
+      animation.stop();
+    };
   }, [glowAnim]);
+
+  const opacity = glowAnim;
 
   return (
     <View style={{ alignItems: "center" }}>
-      <Animated.View style={{ opacity: glowAnim }}>
+      <Animated.View
+        style={{
+          opacity,
+          shadowColor: "#A020F0",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 20,
+          elevation: 10,
+        }}
+      >
         <Image
           source={require("@/assets/images/pod-transparent.png")}
           style={{
@@ -54,6 +64,25 @@ function GlowingLogo() {
             resizeMode: "contain",
           }}
         />
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: -20,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: "center",
+            alignItems: "center",
+            opacity,
+          }}
+        >
+          <Ionicons
+            name="search-outline"
+            size={28}
+            color="#444444"
+            style={{ transform: [{ rotate: "70deg" }] }}
+          />
+        </Animated.View>
       </Animated.View>
     </View>
   );
@@ -61,59 +90,10 @@ function GlowingLogo() {
 
 const ConnectScreen = () => {
   const { colors } = useTheme();
+
   const templateStyles = createTemplateStyles(colors);
 
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [isScanning, setIsScanning] = useState(false);
-
-  const checkScanPermission = async () => {
-    if (Platform.OS !== "android") return true;
-
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-    );
-
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
-  };
-
-  const startScan = async () => {
-    setDevices([]);
-    setIsScanning(true);
-
-    const allowed = await checkScanPermission();
-    if (!allowed) {
-      setIsScanning(false);
-      return;
-    }
-
-    manager.startDeviceScan(null, null, (error, device) => {
-      if (error) {
-        console.log(error);
-        setIsScanning(false);
-        return;
-      }
-
-      if (device?.name && device.name.trim().length > 0) {
-        setDevices((prev) => {
-          if (!prev.find((d) => d.id === device.id)) {
-            return [...prev, device];
-          }
-          return prev;
-        });
-      }
-    });
-
-    setTimeout(() => {
-      manager.stopDeviceScan();
-      setIsScanning(false);
-    }, 8000);
-  };
-
-  useEffect(() => {
-    return () => {
-      manager.stopDeviceScan();
-    };
-  }, []);
+  const [isConnected, setIsConnected] = useState(false);
 
   return (
     <LinearGradient
@@ -129,62 +109,136 @@ const ConnectScreen = () => {
             >
               <Ionicons name="bluetooth" size={28} color="#ffffff" />
             </LinearGradient>
-            <Text style={templateStyles.title}>Scan for Devices</Text>
+            <Text style={templateStyles.title}>Connect to NeoXalle</Text>
           </View>
         </View>
-
         <View style={templateStyles.header}>
-          <View style={templateStyles.titleContainer}>
+          <View
+            style={[
+              templateStyles.titleContainer,
+              {
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+              },
+            ]}
+          >
             <Entypo
               name="dot-single"
               size={32}
-              color={isScanning ? "#f5a623" : "#66c04b"}
+              color={isConnected ? "66c04b" : colors.textMuted}
+              style={{ marginRight: -4 }}
             />
-            <Text style={templateStyles.settingText}>
-              {isScanning ? "Scanning..." : "Ready"}
+            <Text
+              style={[
+                templateStyles.settingText,
+                { color: isConnected ? "66c04b" : colors.textMuted },
+              ]}
+            >
+              {isConnected ? "Connected" : "Not Connected"}
             </Text>
           </View>
         </View>
 
         <GlowingLogo />
-
-        <TouchableOpacity
-          onPress={startScan}
+        <View
           style={{
-            backgroundColor: colors.primary,
-            padding: 15,
-            marginHorizontal: 40,
-            borderRadius: 12,
+            alignSelf: "center",
+            marginTop: 12,
+            paddingHorizontal: 120,
+            paddingVertical: 20,
+            borderRadius: 8,
+            backgroundColor: isConnected
+              ? "#66c04b20"
+              : colors.textMuted + "20",
+            borderWidth: 1,
+            borderColor: isConnected ? "#66c04b60" : colors.textMuted + "60",
+            flexDirection: "row",
             alignItems: "center",
-            marginTop: 20,
+            gap: 6,
           }}
         >
-          <Text style={{ color: "#fff", fontWeight: "bold" }}>Start Scan</Text>
-        </TouchableOpacity>
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 2,
+              backgroundColor: isConnected ? "#66c04b" : colors.textMuted,
+            }}
+          />
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "600",
+              color: isConnected ? "#66c04b" : colors.textMuted,
+            }}
+          >
+            {isConnected ? "Connected" : "Not Connected"}
+          </Text>
+        </View>
 
-        <FlatList
-          data={devices}
-          keyExtractor={(item) => item.id}
-          style={{ marginTop: 20 }}
-          renderItem={({ item }) => (
-            <View
-              style={{
-                padding: 15,
-                marginHorizontal: 20,
-                marginVertical: 6,
-                borderRadius: 12,
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-              }}
+        <View
+          style={{
+            marginTop: 32,
+            gap: 12,
+            paddingHorizontal: 24,
+            flexDirection: "row",
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => {}}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: colors.primary,
+              paddingVertical: 16,
+              borderRadius: 14,
+              gap: 10,
+              flex: 1,
+            }}
+          >
+            <Ionicons name="search-outline" size={22} color="#fff" />
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+              Scan Devices
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {}}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: colors.danger + "20",
+              borderWidth: 2,
+              borderColor: colors.danger + "60",
+              paddingVertical: 16,
+              borderRadius: 14,
+              gap: 10,
+              flex: 1,
+            }}
+          >
+            <Ionicons
+              name="close-circle-outline"
+              size={22}
+              color={colors.danger}
+            />
+            <Text
+              style={{ color: colors.danger, fontSize: 16, fontWeight: "700" }}
             >
-              <Text style={{ color: colors.text, fontWeight: "600" }}>
-                {item.name}
-              </Text>
-            </View>
-          )}
-        />
+              Disconnect
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={templateStyles.scrollView}
+          contentContainerStyle={templateStyles.content}
+          showsVerticalScrollIndicator={false}
+        ></ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
 };
-
 export default ConnectScreen;

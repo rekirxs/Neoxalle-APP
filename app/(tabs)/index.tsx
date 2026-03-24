@@ -1,30 +1,30 @@
 import { createHomeStyles } from "@/assets/styles/home.style";
 import EmptyState from "@/components/EmptyState";
 import GameInput from "@/components/GameInput";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { api } from "@/convex/_generated/api";
-import { Doc, Id } from "@/convex/_generated/dataModel";
 import useTheme from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  Alert,
-  Animated,
-  Easing,
-  FlatList,
-  Image,
-  StatusBar,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    Easing,
+    FlatList,
+    Image,
+    StatusBar,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Game = Doc<"games">;
+type Game = {
+  _id: string;
+  text: string;
+  SinglePlayer?: boolean;
+};
 
 function GlowingLogo() {
   const glowAnim = useRef(new Animated.Value(0.5)).current;
@@ -85,36 +85,42 @@ export default function Index() {
   const { colors } = useTheme();
   const router = useRouter();
 
-  const [editingId, setEditingId] = useState<Id<"games"> | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
   const homeStyles = createHomeStyles(colors);
 
-  const games = useQuery(api.games.getGames);
-  const toggleGame = useMutation(api.games.toggleGame);
-  const deleteGame = useMutation(api.games.deleteGames);
-  const updateGame = useMutation(api.games.updateGame);
+  const [games, setGames] = useState<Game[]>([]);
 
-  const isLoading = games === undefined;
+  useEffect(() => {
+    // Initialize with empty array or local sample data.
+    setGames([]);
+  }, []);
 
-  if (isLoading) return <LoadingSpinner />;
+  const isLoading = false;
 
-  const handleToggleGame = async (id: Id<"games">) => {
+  const handleToggleGame = async (id: string) => {
     try {
-      await toggleGame({ id });
+      setGames((g) =>
+        g.map((item) =>
+          item._id === id
+            ? { ...item, SinglePlayer: !item.SinglePlayer }
+            : item,
+        ),
+      );
     } catch (error) {
       console.log("Error toggling game", error);
       Alert.alert("Error", "Failed to toggle game");
     }
   };
 
-  const handleDeleteGame = async (id: Id<"games">) => {
+  const handleDeleteGame = async (id: string) => {
     Alert.alert("Delete Game", "Are you sure you want to delete this game?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => deleteGame({ id }),
+        onPress: () => setGames((g) => g.filter((it) => it._id !== id)),
       },
     ]);
   };
@@ -127,7 +133,11 @@ export default function Index() {
   const handleSaveEdit = async () => {
     if (editingId) {
       try {
-        await updateGame({ id: editingId, text: editText.trim() });
+        setGames((g) =>
+          g.map((it) =>
+            it._id === editingId ? { ...it, text: editText.trim() } : it,
+          ),
+        );
         setEditingId(null);
         setEditText("");
       } catch (error) {
@@ -276,7 +286,12 @@ export default function Index() {
           <GlowingLogo />
         </View>
 
-        <GameInput />
+        <GameInput
+          onAdd={(text) => {
+            const newItem: Game = { _id: Date.now().toString(), text };
+            setGames((g) => [newItem, ...g]);
+          }}
+        />
 
         <FlatList
           data={games}

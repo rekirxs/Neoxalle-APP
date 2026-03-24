@@ -1,7 +1,5 @@
-import { api } from "@/convex/_generated/api";
 import useTheme from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "convex/react";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text, View } from "react-native";
 import { createHomeStyles } from "../assets/styles/home.style";
@@ -11,7 +9,7 @@ const Header = () => {
 
   const homeStyles = createHomeStyles(colors);
 
-  const game = useQuery(api.games.getGames);
+  // Convex removed: this component no longer requests live data.
 
   return (
     <View style={homeStyles.header}>
