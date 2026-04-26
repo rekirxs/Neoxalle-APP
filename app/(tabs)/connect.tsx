@@ -1,6 +1,7 @@
 import { createTemplateStyles } from "@/assets/styles/template.styles";
 import useTheme from "@/hooks/useTheme";
 import { Entypo, Ionicons } from "@expo/vector-icons";
+import { Buffer } from "buffer";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -20,10 +21,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const manager = new BleManager();
 
+const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+const CMD_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+const NOTIFY_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
+const PODS = [1, 2, 3, 4];
+
 function GlowingLogo({ isConnected }: { isConnected: boolean }) {
   const glowAnim = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
+    if (isConnected) {
+      glowAnim.setValue(1);
+      return;
+    }
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, {
@@ -42,7 +52,7 @@ function GlowingLogo({ isConnected }: { isConnected: boolean }) {
     );
     animation.start();
     return () => animation.stop();
-  }, [glowAnim]);
+  }, [glowAnim, isConnected]);
 
   const opacity = glowAnim;
 
@@ -61,8 +71,9 @@ function GlowingLogo({ isConnected }: { isConnected: boolean }) {
         <Image
           source={
             isConnected
-            ? require("@/assets/images/pod-transparent-color.png")}
-            : require("@/assets/images/pod-transparent.png")}
+              ? require("@/assets/images/pod-transparent-color.png")
+              : require("@/assets/images/pod-transparent.png")
+          }
           style={{ width: 180 * 3, height: 67.5 * 3, resizeMode: "contain" }}
         />
         {!isConnected && (
@@ -91,16 +102,18 @@ function GlowingLogo({ isConnected }: { isConnected: boolean }) {
   );
 }
 
+type HitResult = { id: string; text: string; time: string; hit: boolean };
+
 const ConnectScreen = () => {
   const { colors } = useTheme();
   const templateStyles = createTemplateStyles(colors);
 
-  const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
-
   const [isConnected, setIsConnected] = useState(false);
-  const [devices, setDevices] = useState<Device[]>([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [results, setResults] = useState<HitResult[]>([]);
+  const [activePod, setActivePod] = useState<number | null>(null);
+  const deviceRef = useRef<Device | null>(null);
 
   const checkAndroidPermissions = async () => {
     if (Platform.OS !== "android") return true;
@@ -128,8 +141,44 @@ const ConnectScreen = () => {
     }
   };
 
+  const subscribeToNotifications = (d: Device) => {
+    d.monitorCharacteristicForService(
+      SERVICE_UUID,
+      NOTIFY_CHAR_UUID,
+      (error, characteristic) => {
+        if (error || !characteristic?.value) return;
+        const msg = Buffer.from(characteristic.value, "base64").toString(
+          "utf-8",
+        );
+        parseResult(msg);
+      },
+    );
+  };
+
+  const parseResult = (msg: string) => {
+    const now = new Date().toLocaleTimeString();
+    let text = "";
+    let hit = false;
+
+    if (msg.startsWith("HIT:")) {
+      const parts = msg.split(":");
+      text = `Pod ${parts[1]}  ${parts[2]}ms  ${parts[3]}G`;
+      hit = true;
+      setActivePod(null);
+    } else if (msg.startsWith("MISS:")) {
+      text = `Pod ${msg.split(":")[1]} Missed`;
+      setActivePod(null);
+    }
+
+    if (text) {
+      setResults((prev) => [
+        { id: Date.now().toString(), text, time: now, hit },
+        ...prev,
+      ]);
+    }
+  };
+
   const startScan = async () => {
-    setDevices([]);
     setIsScanning(true);
 
     if (Platform.OS === "android") {
@@ -166,7 +215,6 @@ const ConnectScreen = () => {
           setConnectedDevice(connected);
           setIsConnected(true);
 
-          // Listen for disconnection
           manager.onDeviceDisconnected(connected.id, () => {
             setIsConnected(false);
             setConnectedDevice(null);
@@ -181,11 +229,30 @@ const ConnectScreen = () => {
       }
     });
 
-    // Stop scan after 15 seconds if not found
     setTimeout(() => {
       manager.stopDeviceScan();
       setIsScanning(false);
     }, 15000);
+  };
+
+  const sendCommand = async (cmd: string) => {
+    if (!deviceRef.current) return;
+    const encoded = Buffer.from(cmd).toString("base64");
+    await deviceRef.current.writeCharacteristicWithResponseForService(
+      SERVICE_UUID,
+      CMD_CHAR_UUID,
+      encoded,
+    );
+  };
+
+  const triggerPod = async (pod: number) => {
+    setActivePod(pod);
+    await sendCommand(`ON:${pod}`);
+  };
+
+  const stopAll = async () => {
+    setActivePod(null);
+    await sendCommand("OFF:ALL");
   };
 
   useEffect(() => {
@@ -200,211 +267,275 @@ const ConnectScreen = () => {
       style={templateStyles.container}
     >
       <SafeAreaView style={templateStyles.safeArea}>
-        <View style={templateStyles.header}>
-          <View style={templateStyles.titleContainer}>
-            <LinearGradient
-              colors={colors.gradients.primary}
-              style={templateStyles.iconContainer}
-            >
-              <Ionicons name="bluetooth" size={28} color="#ffffff" />
-            </LinearGradient>
-            <Text style={templateStyles.title}>Connect to NeoXalle</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={templateStyles.header}>
+            <View style={templateStyles.titleContainer}>
+              <LinearGradient
+                colors={colors.gradients.primary}
+                style={templateStyles.iconContainer}
+              >
+                <Ionicons name="bluetooth" size={28} color="#ffffff" />
+              </LinearGradient>
+              <Text style={templateStyles.title}>NeoXalle</Text>
+            </View>
           </View>
-        </View>
 
-        <View style={templateStyles.header}>
           <View
-            style={[
-              templateStyles.titleContainer,
-              {
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "center",
-              },
-            ]}
+            style={{
+              alignSelf: "center",
+              marginTop: 4,
+              paddingHorizontal: 14,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: isConnected
+                ? "#66c04b20"
+                : colors.textMuted + "20",
+              borderWidth: 1,
+              borderColor: isConnected ? "#66c04b60" : colors.textMuted + "60",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+            }}
           >
             <Entypo
               name="dot-single"
-              size={32}
+              size={20}
               color={isConnected ? "#66c04b" : colors.textMuted}
-              style={{ marginRight: -4 }}
             />
             <Text
-              style={[
-                templateStyles.settingText,
-                { color: isConnected ? "#66c04b" : colors.textMuted },
-              ]}
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                color: isConnected ? "#66c04b" : colors.textMuted,
+              }}
             >
               {isConnected ? "Connected" : "Not Connected"}
             </Text>
           </View>
-        </View>
 
-        <GlowingLogo isConnected={isConnected} />
+          <View style={{ marginTop: 16 }}>
+            <GlowingLogo isConnected={isConnected} />
+          </View>
 
-        <View
-          style={{
-            alignSelf: "center",
-            marginTop: 12,
-            paddingHorizontal: 14,
-            paddingVertical: 6,
-            borderRadius: 8,
-            backgroundColor: isConnected
-              ? "#66c04b20"
-              : colors.textMuted + "20",
-            borderWidth: 1,
-            borderColor: isConnected ? "#66c04b60" : colors.textMuted + "60",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
           <View
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 2,
-              backgroundColor: isConnected ? "#66c04b" : colors.textMuted,
-            }}
-          />
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "600",
-              color: isConnected ? "#66c04b" : colors.textMuted,
-            }}
-          >
-            {isConnected ? "Connected" : "Not Connected"}
-          </Text>
-        </View>
-
-        <View
-          style={{
-            marginTop: 32,
-            gap: 12,
-            paddingHorizontal: 24,
-            flexDirection: "row",
-          }}
-        >
-          <TouchableOpacity
-            onPress={
-              isScanning
-                ? () => {
-                    manager.stopDeviceScan();
-                    setIsScanning(false);
-                  }
-                : startScan
-            }
-            style={{
-              flex: 1,
+              marginTop: 24,
+              gap: 12,
+              paddingHorizontal: 24,
               flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.primary,
-              paddingVertical: 16,
-              borderRadius: 14,
-              gap: 10,
             }}
           >
-            <Ionicons
-              name={isScanning ? "stop" : "search-outline"}
-              size={22}
-              color="#fff"
-            />
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-              {isScanning ? "Stop" : "Scan Devices"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={async () => {
-              if (connectedDevice) {
-                await connectedDevice.cancelConnection();
+            <TouchableOpacity
+              onPress={
+                isScanning
+                  ? () => {
+                      manager.stopDeviceScan();
+                      setIsScanning(false);
+                    }
+                  : startScan
               }
-              setIsConnected(false);
-              setConnectedDevice(null);
-            }}
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.danger + "20",
-              borderWidth: 2,
-              borderColor: colors.danger + "60",
-              paddingVertical: 16,
-              borderRadius: 14,
-              gap: 10,
-            }}
-          >
-            <Ionicons
-              name="close-circle-outline"
-              size={22}
-              color={colors.danger}
-            />
-            <Text
-              style={{ color: colors.danger, fontSize: 16, fontWeight: "700" }}
-            >
-              Disconnect
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {devices.length > 0 && (
-          <View style={{ paddingHorizontal: 24, marginTop: 20, gap: 10 }}>
-            <Text
               style={{
-                color: colors.textMuted,
-                fontSize: 13,
-                fontWeight: "600",
-                marginBottom: 4,
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.primary,
+                paddingVertical: 16,
+                borderRadius: 14,
+                gap: 10,
               }}
             >
-              {devices.length} device{devices.length !== 1 ? "s" : ""} found
-            </Text>
-            {devices.map((device) => (
-              <View
-                key={device.id}
+              <Ionicons
+                name={isScanning ? "stop" : "search-outline"}
+                size={22}
+                color="#fff"
+              />
+              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+                {isScanning ? "Stop" : "Scan"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                if (connectedDevice) await connectedDevice.cancelConnection();
+                setIsConnected(false);
+                setConnectedDevice(null);
+                deviceRef.current = null;
+              }}
+              style={{
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.danger + "20",
+                borderWidth: 2,
+                borderColor: colors.danger + "60",
+                paddingVertical: 16,
+                borderRadius: 14,
+                gap: 10,
+              }}
+            >
+              <Ionicons
+                name="close-circle-outline"
+                size={22}
+                color={colors.danger}
+              />
+              <Text
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: colors.backgrounds + "40",
-                  borderRadius: 12,
-                  padding: 14,
-                  borderWidth: 1,
-                  borderColor: colors.primary + "40",
-                  gap: 12,
+                  color: colors.danger,
+                  fontSize: 16,
+                  fontWeight: "700",
                 }}
               >
-                <Ionicons
-                  name="bluetooth-outline"
-                  size={20}
-                  color={colors.primary}
-                />
-                <View>
-                  <Text
-                    style={{
-                      color: colors.text,
-                      fontWeight: "700",
-                      fontSize: 15,
-                    }}
-                  >
-                    {device.name}
+                Disconnect
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {isConnected && (
+            <View style={{ paddingHorizontal: 24, marginTop: 28 }}>
+              <Text
+                style={{
+                  color: colors.textMuted,
+                  fontSize: 13,
+                  fontWeight: "600",
+                  marginBottom: 12,
+                }}
+              >
+                PODS
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+                {PODS.map((pod) => {
+                  const isActive = activePod === pod;
+                  return (
+                    <TouchableOpacity
+                      key={pod}
+                      onPress={() => triggerPod(pod)}
+                      style={{
+                        width: "47%",
+                        paddingVertical: 20,
+                        borderRadius: 16,
+                        alignItems: "center",
+                        backgroundColor: isActive
+                          ? colors.primary
+                          : colors.primary + "20",
+                        borderWidth: 2,
+                        borderColor: isActive
+                          ? colors.primary
+                          : colors.primary + "50",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 22,
+                          fontWeight: "800",
+                          color: isActive ? "#fff" : colors.primary,
+                        }}
+                      >
+                        Pod {pod}
+                      </Text>
+                      {isActive && (
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            color: "#ffffff90",
+                            marginTop: 4,
+                          }}
+                        >
+                          waiting...
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <TouchableOpacity
+                onPress={stopAll}
+                style={{
+                  marginTop: 12,
+                  paddingVertical: 16,
+                  borderRadius: 14,
+                  alignItems: "center",
+                  backgroundColor: colors.danger + "20",
+                  borderWidth: 2,
+                  borderColor: colors.danger + "60",
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.danger,
+                    fontSize: 16,
+                    fontWeight: "700",
+                  }}
+                >
+                  Stop All
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* results */}
+          {results.length > 0 && (
+            <View
+              style={{ paddingHorizontal: 24, marginTop: 28, marginBottom: 20 }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.textMuted,
+                    fontSize: 13,
+                    fontWeight: "600",
+                  }}
+                >
+                  RESULTS
+                </Text>
+                <TouchableOpacity onPress={() => setResults([])}>
+                  <Text style={{ color: colors.danger, fontSize: 12 }}>
+                    Clear
                   </Text>
-                  <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-                    {device.rssi ? `${device.rssi} dBm` : "Signal Unknown"}
+                </TouchableOpacity>
+              </View>
+              {results.map((item) => (
+                <View
+                  key={item.id}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                    paddingVertical: 10,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.primary + "20",
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: item.hit ? "#66c04b" : colors.danger,
+                    }}
+                  />
+                  <Text
+                    style={{ color: colors.textMuted, fontSize: 11, width: 70 }}
+                  >
+                    {item.time}
+                  </Text>
+                  <Text style={{ color: colors.text, fontSize: 14, flex: 1 }}>
+                    {item.text}
                   </Text>
                 </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        <ScrollView
-          style={templateStyles.scrollView}
-          contentContainerStyle={templateStyles.content}
-          showsVerticalScrollIndicator={false}
-        />
+              ))}
+            </View>
+          )}
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
