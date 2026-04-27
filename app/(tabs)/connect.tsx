@@ -19,8 +19,6 @@ import {
 import { BleManager, Device } from "react-native-ble-plx";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const manager = new BleManager();
-
 const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const CMD_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 const NOTIFY_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a9";
@@ -108,6 +106,8 @@ const ConnectScreen = () => {
   const { colors } = useTheme();
   const templateStyles = createTemplateStyles(colors);
 
+  const managerRef = useRef(new BleManager());
+
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -160,16 +160,19 @@ const ConnectScreen = () => {
     let text = "";
     let hit = false;
 
-    if (msg.startsWith("HIT:")) {
-      const parts = msg.split(":");
+    const clean = msg.trim();
+
+    if (clean.startsWith("HIT:")) {
+      // ← use clean
+      const parts = clean.split(":");
       text = `Pod ${parts[1]}  ${parts[2]}ms  ${parts[3]}G`;
       hit = true;
       setActivePod(null);
-    } else if (msg.startsWith("MISS:")) {
-      text = `Pod ${msg.split(":")[1]} Missed`;
+    } else if (clean.startsWith("MISS:")) {
+      // ← use clean
+      text = `Pod ${clean.split(":")[1]} Missed`;
       setActivePod(null);
     }
-
     if (text) {
       setResults((prev) => [
         { id: Date.now().toString(), text, time: now, hit },
@@ -189,7 +192,7 @@ const ConnectScreen = () => {
       }
     }
 
-    const state = await manager.state();
+    const state = await managerRef.current.state();
     if (state !== "PoweredOn") {
       Alert.alert(
         "Bluetooth is Off",
@@ -199,25 +202,28 @@ const ConnectScreen = () => {
       return;
     }
 
-    manager.startDeviceScan(null, null, async (error, device) => {
+    managerRef.current.startDeviceScan(null, null, async (error, device) => {
       if (error) {
         setIsScanning(false);
         return;
       }
 
       if (device?.name === "NeoXalle-Master") {
-        manager.stopDeviceScan();
+        managerRef.current.stopDeviceScan();
         setIsScanning(false);
 
         try {
           const connected = await device.connect();
           await connected.discoverAllServicesAndCharacteristics();
           setConnectedDevice(connected);
+          deviceRef.current = connected;
           setIsConnected(true);
+          subscribeToNotifications(connected);
 
-          manager.onDeviceDisconnected(connected.id, () => {
+          managerRef.current.onDeviceDisconnected(connected.id, () => {
             setIsConnected(false);
             setConnectedDevice(null);
+            deviceRef.current = null;
           });
         } catch (e) {
           Alert.alert(
@@ -230,7 +236,7 @@ const ConnectScreen = () => {
     });
 
     setTimeout(() => {
-      manager.stopDeviceScan();
+      managerRef.current.stopDeviceScan(); // ← CHANGED: managerRef.current
       setIsScanning(false);
     }, 15000);
   };
@@ -257,7 +263,8 @@ const ConnectScreen = () => {
 
   useEffect(() => {
     return () => {
-      manager.stopDeviceScan();
+      managerRef.current.stopDeviceScan();
+      managerRef.current.destroy();
     };
   }, []);
 
@@ -329,7 +336,7 @@ const ConnectScreen = () => {
               onPress={
                 isScanning
                   ? () => {
-                      manager.stopDeviceScan();
+                      managerRef.current.stopDeviceScan();
                       setIsScanning(false);
                     }
                   : startScan
@@ -357,10 +364,18 @@ const ConnectScreen = () => {
 
             <TouchableOpacity
               onPress={async () => {
-                if (connectedDevice) await connectedDevice.cancelConnection();
-                setIsConnected(false);
-                setConnectedDevice(null);
-                deviceRef.current = null;
+                try {
+                  if (connectedDevice) await connectedDevice.cancelConnection();
+                } catch (e) {
+                } finally {
+                  managerRef.current.stopDeviceScan();
+                  managerRef.current.destroy();
+                  managerRef.current = new BleManager(); // ← CHANGED: fresh manager
+                  setIsConnected(false);
+                  setConnectedDevice(null);
+                  deviceRef.current = null;
+                  setActivePod(null);
+                }
               }}
               style={{
                 flex: 1,
